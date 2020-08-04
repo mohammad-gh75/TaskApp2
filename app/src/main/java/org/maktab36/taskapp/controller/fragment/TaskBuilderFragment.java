@@ -2,11 +2,13 @@ package org.maktab36.taskapp.controller.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
 
 import androidx.fragment.app.Fragment;
 
@@ -23,8 +25,8 @@ import java.util.Random;
 
 public class TaskBuilderFragment extends Fragment {
     private Button mButtonBuild;
-    private TextView mTextViewName;
-    private TextView mTextViewNumber;
+    private EditText mTextViewName;
+    private EditText mTextViewNumber;
 
     public TaskBuilderFragment() {
         // Required empty public constructor
@@ -37,6 +39,7 @@ public class TaskBuilderFragment extends Fragment {
         return fragment;
     }
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,8 +50,18 @@ public class TaskBuilderFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_task_builder, container, false);
         findViews(view);
+        loadTexts();
         setListeners();
         return view;
+    }
+
+    private void loadTexts() {
+        String taskName=TaskRepository.getInstance().getTaskName();
+        int taskNumber=TaskRepository.getInstance().getTaskNumber();
+        mTextViewName.setText(taskName);
+        if(taskNumber!=-1) {
+            mTextViewNumber.setText(String.valueOf(taskNumber));
+        }
     }
 
     private void findViews(View view) {
@@ -58,27 +71,74 @@ public class TaskBuilderFragment extends Fragment {
     }
 
     private void setListeners() {
+        mTextViewName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                TaskRepository.getInstance().setTaskName(charSequence.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
+
+        mTextViewNumber.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if(!charSequence.toString().equals("")) {
+                    int number = Integer.parseInt(charSequence.toString());
+                    TaskRepository.getInstance().setTaskNumber(number);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
+
         mButtonBuild.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String name = mTextViewName.getText().toString();
-                int number = Integer.parseInt(mTextViewNumber.getText().toString());
-                TaskRepository.getInstance().setList(createTaskList(name,number));
-                Intent intent = TaskListActivity.newIntent(getActivity()/*, name, number*/);
+                setTaskLists();
+                Intent intent = TaskListActivity.newIntent(getActivity());
                 startActivity(intent);
             }
         });
     }
 
-    private List<Task> createTaskList(String taskName,int taskNumber) {
-        List<Task> tasks = new ArrayList<>();
+    private void setTaskLists() {
+        String taskName = TaskRepository.getInstance().getTaskName();
+        int taskNumber = TaskRepository.getInstance().getTaskNumber();
+        List<Task> toDoTasks = new ArrayList<>();
+        List<Task> doingTasks = new ArrayList<>();
+        List<Task> doneTasks = new ArrayList<>();
         for (int i = 1; i <= taskNumber; i++) {
             Random random = new Random();
             TaskState[] taskStates = TaskState.values();
             int r = random.nextInt(taskStates.length);
             Task task = new Task(taskName + "#" + i, taskStates[r]);
-            tasks.add(task);
+            switch (task.getState()) {
+                case TODO:
+                    toDoTasks.add(task);
+                    break;
+                case DONE:
+                    doneTasks.add(task);
+                    break;
+                case DOING:
+                    doingTasks.add(task);
+                    break;
+            }
         }
-        return tasks;
+        TaskRepository.getInstance().setDoingTasks(doingTasks);
+        TaskRepository.getInstance().setDoneTasks(doneTasks);
+        TaskRepository.getInstance().setToDoTasks(toDoTasks);
     }
 }

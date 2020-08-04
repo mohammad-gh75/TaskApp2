@@ -7,6 +7,7 @@
 
     <string name="text_view_username">Username:</string>
     <string name="text_view_task_number">Task\'s Number:</string>
+    <string name="text_view_empty_task_list">You Don\'t Have Any Task.</string>
 
 
     <string name="button_build">Build</string>

@@ -27,10 +27,12 @@ import java.util.Random;
 
 public class TaskTabFragment extends Fragment {
     private FloatingActionButton mActionButton;
-    private List<Task> mTasks;
     private TabLayout mTabLayout;
     private ViewPager2 mTabViewPager;
-    private FragmentStateAdapter mAdapter;
+    private FragmentStateAdapter mViewPagerAdapter;
+    private TaskListFragment mFragmentTodo;
+    private TaskListFragment mFragmentDoing;
+    private TaskListFragment mFragmentDone;
 
     public TaskTabFragment() {
         // Required empty public constructor
@@ -53,8 +55,6 @@ public class TaskTabFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_task_tab, container, false);
         findViews(view);
-
-        /*mTasks = createTaskList();*/
         updateUI();
         setListener();
 
@@ -84,24 +84,48 @@ public class TaskTabFragment extends Fragment {
     }
 
     private void setListener() {
-        /*mActionButton.setOnClickListener(new View.OnClickListener() {
+        mActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int taskNumber = TaskRepository.getInstance().getList().size() + 1;
-                String taskName = TaskRepository.getInstance().getList().get(0)
-                        .getName().split("#")[0];
-                Random random = new Random();
-                TaskState[] taskStates = TaskState.values();
-                int r = random.nextInt(taskStates.length);
-                Task task = new Task(taskName + "#" + taskNumber, taskStates[r]);
-                TaskRepository.getInstance().insert(task);
+                Task task = createTask();
+                switch (task.getState()) {
+                    case TODO:
+                        mFragmentTodo.getAdapter().notifyDataSetChanged();
+                        break;
+                    case DONE:
+                        mFragmentDone.getAdapter().notifyDataSetChanged();
+                        break;
+                    case DOING:
+                        mFragmentDoing.getAdapter().notifyDataSetChanged();
+                        break;
+                }
+                updateUI();
             }
-        });*/
+        });
+    }
+
+    private Task createTask() {
+        int taskNumber = TaskRepository.getInstance().getTaskNumber() + 1;
+        TaskRepository.getInstance().setTaskNumber(taskNumber);
+        String taskName = TaskRepository.getInstance().getTaskName();
+        Random random = new Random();
+        TaskState[] taskStates = TaskState.values();
+        int r = random.nextInt(taskStates.length);
+        Task task = new Task(taskName + "#" + taskNumber, taskStates[r]);
+        TaskRepository.getInstance().insert(task);
+        return task;
     }
 
     private void updateUI() {
-        mAdapter = new TaskViewPagerAdapter(this);
-        mTabViewPager.setAdapter(mAdapter);
+        int currentPage;
+        if(mViewPagerAdapter==null){
+            currentPage=0;
+        }else{
+            currentPage=mTabViewPager.getCurrentItem();
+        }
+        mViewPagerAdapter = new TaskViewPagerAdapter(this);
+        mTabViewPager.setAdapter(mViewPagerAdapter);
+        mTabViewPager.setCurrentItem(currentPage,false);
     }
 
     private class TaskViewPagerAdapter extends FragmentStateAdapter {
@@ -115,11 +139,14 @@ public class TaskTabFragment extends Fragment {
         public Fragment createFragment(int position) {
             switch (position) {
                 case 1:
-                    return TaskListFragment.newInstance(TaskState.DOING);
+                    mFragmentDoing = TaskListFragment.newInstance(TaskState.DOING);
+                    return mFragmentDoing;
                 case 2:
-                    return TaskListFragment.newInstance(TaskState.DONE);
+                    mFragmentDone = TaskListFragment.newInstance(TaskState.DONE);
+                    return mFragmentDone;
                 default:
-                    return TaskListFragment.newInstance(TaskState.TODO);
+                    mFragmentTodo = TaskListFragment.newInstance(TaskState.TODO);
+                    return mFragmentTodo;
             }
         }
 

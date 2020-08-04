@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -33,15 +34,24 @@ public class TaskListFragment extends Fragment {
     private RecyclerView mRecyclerView;
     private TaskListAdapter mAdapter;
     private List<Task> mTasks;
+    private ConstraintLayout mEmptyListLayout;
 
     public TaskListFragment() {
         // Required empty public constructor
     }
 
+    public TaskListAdapter getAdapter() {
+        return mAdapter;
+    }
+
+    public void setAdapter(TaskListAdapter adapter) {
+        mAdapter = adapter;
+    }
+
     public static TaskListFragment newInstance(TaskState state) {
         TaskListFragment fragment = new TaskListFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_TASK_STATE,state.toString());
+        args.putString(ARG_TASK_STATE, state.toString());
         fragment.setArguments(args);
         return fragment;
     }
@@ -49,18 +59,21 @@ public class TaskListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mTasks = getTaskList();
     }
 
-    private List<Task> createTaskList() {
-        List<Task> allTasks = TaskRepository.getInstance().getList();
-        List<Task> tasks = new ArrayList<>();
-        TaskState state=TaskState.valueOf(getArguments().getString(ARG_TASK_STATE));
-        for (int i = 0; i < allTasks.size(); i++) {
-            if(allTasks.get(i).getState()==state){
-                tasks.add(allTasks.get(i));
-            }
+    private List<Task> getTaskList() {
+        TaskState state = TaskState.valueOf(getArguments().getString(ARG_TASK_STATE));
+        switch (state) {
+            case DOING:
+                return TaskRepository.getInstance().getDoingTasks();
+            case DONE:
+                return TaskRepository.getInstance().getDoneTasks();
+            case TODO:
+                return TaskRepository.getInstance().getToDoTasks();
         }
-        return tasks;
+        return null;
     }
 
     @Override
@@ -74,25 +87,32 @@ public class TaskListFragment extends Fragment {
         } else {
             mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         }
-        mTasks = createTaskList();
         updateUI();
 //        setListener();
+        changeLayout();
         return view;
+    }
+
+    private void changeLayout() {
+        if(mTasks.size()==0){
+            mRecyclerView.setVisibility(View.GONE);
+            mEmptyListLayout.setVisibility(View.VISIBLE);
+        }else{
+            mRecyclerView.setVisibility(View.VISIBLE);
+            mEmptyListLayout.setVisibility(View.GONE);
+        }
     }
 
     private void findViews(View view) {
         mRecyclerView = view.findViewById(R.id.recycler_view_tasks);
+        mEmptyListLayout=view.findViewById(R.id.empty_list_layout);
     }
 
     /*private void setListener(){
     }*/
 
     private void updateUI() {
-        if (mAdapter == null) {
-            mAdapter=new TaskListAdapter(getActivity(),mTasks);
-            mRecyclerView.setAdapter(mAdapter);
-        } else {
-//            mAdapter.notifyItemInserted(mTaskNumber);
-        }
+        mAdapter = new TaskListAdapter(getActivity(), mTasks);
+        mRecyclerView.setAdapter(mAdapter);
     }
 }

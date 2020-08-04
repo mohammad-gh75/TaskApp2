@@ -1,13 +1,18 @@
 package org.maktab36.taskapp.repository;
 
 import org.maktab36.taskapp.model.Task;
+import org.maktab36.taskapp.model.TaskState;
 
 import java.util.List;
 import java.util.UUID;
 
-public class TaskRepository implements IRepository<Task> {
+public class TaskRepository {
     private static TaskRepository sTaskRepository;
-    private List<Task> mTasks;
+    private String mTaskName;
+    private int mTaskNumber=-1;
+    private List<Task> mToDoTasks;
+    private List<Task> mDoneTasks;
+    private List<Task> mDoingTasks;
 
     public static TaskRepository getInstance() {
         if(sTaskRepository==null){
@@ -19,20 +24,58 @@ public class TaskRepository implements IRepository<Task> {
     private TaskRepository(){
     }
 
-
-    @Override
-    public List<Task> getList() {
-        return mTasks;
+    public String getTaskName() {
+        return mTaskName;
     }
 
-    @Override
-    public void setList(List<Task> list) {
-        mTasks=list;
+    public void setTaskName(String taskName) {
+        mTaskName = taskName;
     }
 
-    @Override
+    public int getTaskNumber() {
+        return mTaskNumber;
+    }
+
+    public void setTaskNumber(int taskNumber) {
+        mTaskNumber = taskNumber;
+    }
+
+    public List<Task> getToDoTasks() {
+        return mToDoTasks;
+    }
+
+    public void setToDoTasks(List<Task> toDoTasks) {
+        mToDoTasks = toDoTasks;
+    }
+
+    public List<Task> getDoneTasks() {
+        return mDoneTasks;
+    }
+
+    public void setDoneTasks(List<Task> doneTasks) {
+        mDoneTasks = doneTasks;
+    }
+
+    public List<Task> getDoingTasks() {
+        return mDoingTasks;
+    }
+
+    public void setDoingTasks(List<Task> doingTasks) {
+        mDoingTasks = doingTasks;
+    }
+
     public Task get(UUID uuid) {
-        for (Task task:mTasks) {
+        for (Task task:mToDoTasks) {
+            if(task.getId().equals(uuid)){
+                return task;
+            }
+        }
+        for (Task task:mDoingTasks) {
+            if(task.getId().equals(uuid)){
+                return task;
+            }
+        }
+        for (Task task:mDoneTasks) {
             if(task.getId().equals(uuid)){
                 return task;
             }
@@ -42,28 +85,33 @@ public class TaskRepository implements IRepository<Task> {
 
 
 
-    @Override
-    public void update(Task task) {
 
+   /* public void update(Task task) {
     }
 
-    @Override
     public void delete(Task task) {
+    }*/
 
-    }
 
-    @Override
     public void insert(Task task) {
-        mTasks.add(task);
+        switch (task.getState()){
+            case DOING:
+                mDoingTasks.add(task);
+                break;
+            case DONE:
+                mDoneTasks.add(task);
+                break;
+            case TODO:
+                mToDoTasks.add(task);
+                break;
+        }
     }
 
-    @Override
-    public void insertList(List<Task> list) {
 
+    /*public void insertList(List<Task> list) {
     }
 
-    @Override
     public int getPosition(UUID uuid) {
         return 0;
-    }
+    }*/
 }
